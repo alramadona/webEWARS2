@@ -37,7 +37,7 @@ ui <- dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(menuItem("Retropective", tabName="retro", icon=icon("line-chart")),
-                menuItem("Datasets", tabName = "dataset", icon = icon("database")),
+                #menuItem("Datasets", tabName = "dataset", icon = icon("database")),
                 menuItem("Help", tabName="help", icon=icon("info"))
     ),
     div(style="padding-left: 15px; padding-top: 40px; padding-right: 15px; ",
