@@ -36,8 +36,8 @@ ui <- dashboardPage(
   ), 
   
   dashboardSidebar(
-    sidebarMenu(menuItem("Retropective", tabName="retro", icon=icon("line-chart")),
-                #menuItem("Datasets", tabName = "dataset", icon = icon("database")),
+    sidebarMenu(menuItem("Prospective EWS", tabName="retro", icon=icon("line-chart")),
+                menuItem("Datasets", tabName = "dataset", icon = icon("database")),
                 menuItem("Help", tabName="help", icon=icon("info"))
     ),
     div(style="padding-left: 15px; padding-top: 40px; padding-right: 15px; ",
@@ -74,7 +74,7 @@ ui <- dashboardPage(
                                       fluidRow(
                                         column(width=2,
                                                selectInput('country_code', 'country code', 
-                                                           c("MX","XX"),
+                                                           c("CO","XX"),
                                                            selected="XX")),
                                         column(width=3,
                                                textInput("ID_area", "district/ municipality code", "X")),
@@ -156,27 +156,27 @@ ui <- dashboardPage(
                                        tags$br(),tags$br(),tags$hr(),
                                        DT::dataTableOutput('tblwStatS'),
                                        tags$hr()),
-                              tabPanel(title = "Twitter",
-                                       tags$b("the last 15 minutes data retrieve from the Twitter public streaming API"),
-                                       fluidRow(
-                                         valueBoxOutput("n_tweets", width = 2),
-                                         valueBoxOutput("n_users", width = 2),
-                                         valueBoxOutput("n_usersLoc", width = 6)
-                                       ),
-                                       fluidRow(
-                                         ## viewer
-                                         box(width = 12, title = "",
-                                             #verbatimTextOutput("value_form"),
-                                             leafletOutput("mymap"))),
-                                       tags$hr()),
-                              tabPanel(title = "Wikipedia",
-                                       tags$b("Pageviews Analysis"),
-                                       tags$br(),tags$br(),tags$br(),
-                                       dygraphOutput("graph_wiki")
-                              ),
-                              tabPanel(title = "Google search-term",
-                                       textInput("GST", label="search-term", value="dengue, zika, chikungunya"),
-                                       plotOutput("graph_GST")),
+                              # tabPanel(title = "Twitter",
+                              #          tags$b("the last 15 minutes data retrieve from the Twitter public streaming API"),
+                              #          fluidRow(
+                              #            valueBoxOutput("n_tweets", width = 2),
+                              #            valueBoxOutput("n_users", width = 2),
+                              #            valueBoxOutput("n_usersLoc", width = 6)
+                              #          ),
+                              #          fluidRow(
+                              #            ## viewer
+                              #            box(width = 12, title = "",
+                              #                #verbatimTextOutput("value_form"),
+                              #                leafletOutput("mymap"))),
+                              #          tags$hr()),
+                              # tabPanel(title = "Wikipedia",
+                              #          tags$b("Pageviews Analysis"),
+                              #          tags$br(),tags$br(),tags$br(),
+                              #          dygraphOutput("graph_wiki")
+                              # ),
+                              # tabPanel(title = "Google search-term",
+                              #          textInput("GST", label="search-term", value="dengue, zika, chikungunya"),
+                              #          plotOutput("graph_GST")),
                               tabPanel(title = "++"))
               )),
       
@@ -720,13 +720,15 @@ server <- function(input, output) {
                                       date_max = input$wStat_max) %>%
       rename(day = date, location = id)
     
-    meteo_datS <- select(meteo_datS, day,prcp,tavg) %>% mutate(tavg=(tavg/10))
-    meteo_datS$YM <- as.yearmon(meteo_datS$day)
+    meteo_datS <- select(meteo_datS, day,prcp,tavg) %>% mutate(tavg=(tavg/10),
+                                                               prcp=(prcp/10))
+    #meteo_datS$YM <- as.yearmon(meteo_datS$day)
+    meteo_datS$ISOweek <- ISOweek(meteo_datS$day)
     
-    meteo_datS <- select(meteo_datS, YM,prcp,tavg) %>% group_by(YM) %>%
-      summarise(tavg=round(mean(tavg, na.rm=T),2),
-                prcp=(sum(prcp, na.rm=T)))
-    meteo_datS$YM <- as.character(meteo_datS$YM)
+    meteo_datS <- select(meteo_datS, ISOweek,prcp,tavg) %>% group_by(ISOweek) %>%
+      summarise(temp_avg=round(mean(tavg),2),
+                precipitation_sum=(sum(prcp)))
+    meteo_datS$ISOweek <- as.character(meteo_datS$ISOweek)
     return(meteo_datS)
   })
   
@@ -744,7 +746,7 @@ server <- function(input, output) {
   ##
   output$tblwStatS <- DT::renderDataTable({
     tblwStatS <- dat_wStatS()
-    datatable(tblwStatS, options = list(pageLength=12))
+    datatable(tblwStatS, options = list(pageLength=53))
   })
   
   datTweets <- reactive({
